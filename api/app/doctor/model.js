@@ -9,3 +9,4 @@ const doctorSchema = new mongoose.Schema({
   fees: Number,
   isBusy: { type: Boolean, default: false },
 });
+module.exports = mongoose.model("Doctor", doctorSchema);

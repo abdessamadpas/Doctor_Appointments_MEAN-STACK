@@ -28,9 +28,20 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
+  notifications: {
+    type: Array,
+    default: [],
+  },
+  
+  seennotifications: {
+    type: Array,
+    default: [],
+  },
   healthConditions: [String],
-
 
   isSuspended: {
     type: Boolean,

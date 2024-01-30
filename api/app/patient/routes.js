@@ -2,25 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../../middlewares/verifyToken");
 const { checkRole } = require("../../middlewares/checkRole");
-const Patient = require("../patient/model");
+const { getAllPatients, getPatient, updatePatient, deletePatient } = require("../../controllers/patient");
 
-// Route to add a new patient
-const addPatient = router.post("/add", checkRole(["admin"]), async (req, res) => {
-  try {
-    const { nom, prenom } = req.body;
+router.get("/all", checkRole(["patient", "admin", "doctor"]), getAllPatients);
+router.get("/:id",   checkRole(["patient", "admin"]), getPatient);
+router.put("/:id",  checkRole(["patient", "admin"]), updatePatient);
+router.delete("/:id",  checkRole(["patient", "admin"]), deletePatient);
 
-    // Create a new patient
-    const newPatient = await Patient.create({
-      nom,
-      prenom,
-      role: "patient",
-    });
-
-    res.json(newPatient);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error adding patient");
-  }
-});
-
-module.exports = {addPatient};
+module.exports = router;

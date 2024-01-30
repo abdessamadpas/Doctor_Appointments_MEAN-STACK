@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { verifyToken } = require("../../middlewares/verifyToken");
 const { checkRole } = require("../../middlewares/checkRole");
-const Appointment = require("../appointment/model");
-const Patient = require("../patient/model");
-const Doctor = require("../doctor/model");
+
 const {
   bookAppointment,
   getAllAppointments,
@@ -18,23 +15,29 @@ const {
   getConfirmedDoctorAppointments,
   getUnconfirmedPatientAppointments,
   getUnconfirmedDoctorAppointments,
-  confirmAppointment,
+  changeStatusAppointment,
   getConfirmedDoctorPatientAppointments,
+  dailyAppointmentsBooked,
+  getConfirmedAppointmentsDay,
+  getNextAppoitments,
 } = require("../../controllers/appointment");
 
-router.post("/book", checkRole(["doctor", "patient"]), bookAppointment);
+router.post("/book", checkRole(["doctor", "patient", "admin"]), bookAppointment);
 router.get("/all", getAllAppointments);
+router.post("/dailyAppointmentsBooked/:id", dailyAppointmentsBooked); 
 router.get("/patient/:id", getPatientAppointments);
 router.get("/doctor/:id", getDoctorAppointments);
+router.get("/patient/:id", getNextAppoitments);
 router.put("/:id", updateAppointment);
 router.delete("/:id", deleteAppointment);
-router.put("/confirm/:id", confirmAppointment);
+router.put("/confirm/:id", changeStatusAppointment);
 router.get("/confirmed", getConfirmedAppointments);
 router.get("/unconfirmed", getUnconfirmedAppointments);
 router.get("/confirmed/patient/:id", getConfirmedPatientAppointments);
 router.get("/confirmed/doctor/:id", getConfirmedDoctorAppointments);
 router.get("/unconfirmed/patient/:id", getUnconfirmedPatientAppointments);
 router.get("/unconfirmed/doctor/:id", getUnconfirmedDoctorAppointments);
+router.post("/confirmed/today/:id", getConfirmedAppointmentsDay);
 router.get(
   "/confirmed/doctor/:doctorId/patient/:patientId",
   getConfirmedDoctorPatientAppointments

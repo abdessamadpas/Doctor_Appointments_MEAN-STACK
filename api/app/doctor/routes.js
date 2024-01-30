@@ -2,26 +2,28 @@ const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../../middlewares/verifyToken");
 const { checkRole } = require("../../middlewares/checkRole");
-const Doctor = require("../doctor/model");
+const {
+  getDoctor,
+  getAllDoctors,
+  updateDoctor,
+  deleteDoctor,
+  getPatientsDoctor,getSuspendedDoctors
+} = require("../../controllers/doctor");
 
+// Route to get a doctor by id
+router.get("/getDoctor/:id", checkRole(["admin", "doctor"]), getDoctor);
 
-// Route to add a new doctor
- router.post("/add", checkRole(["admin"]), async (req, res) => {
-  try {
-    const { nom, prenom } = req.body;
-    // Create a new doctor
-    const newDoctor = await Doctor.create({
-      nom,
-      prenom,
-      role: "doctor",
-    });
-    res.json(newDoctor);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error adding doctor");
-  }
-});
+// Route to get all doctors
+router.get("/all", checkRole(["admin", "doctor", "patient"]), getAllDoctors);
 
+// Route to update a doctor
+router.put("/:id", checkRole(["admin", "doctor"]), updateDoctor);
 
+// Route to delete a doctor
+router.delete("/:id", checkRole(["admin", "doctor"]), deleteDoctor);
 
+// Route to get all patients of a doctor
+router.get("/:id/patients", checkRole(["admin", "doctor"]), getPatientsDoctor);
+
+router.get("/suspendeddoctors", checkRole(["admin"]), getSuspendedDoctors);
 module.exports = router;

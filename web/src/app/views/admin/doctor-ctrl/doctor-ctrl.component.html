@@ -1,0 +1,41 @@
+<div class="col-12" style="min-height: 100%">
+  <div class="card top-selling overflow-auto" style="min-height: 100%">
+    <div class="card-body pb-0" style="min-height: 100%">
+      <h5 class="card-title">Doctors <span>| Month</span></h5>
+      <table class="table table-borderless">
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Email</th>
+            <th scope="col">City</th>
+            <th scope="col">Created time</th>
+            <th scope="col">Change status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let doctorInfo of doctors">
+            <td>{{ doctorInfo.doctor.username }}</td>
+            <td>{{ doctorInfo.doctor.phone }}</td>
+            <td>{{ doctorInfo.doctor.email }}</td>
+            <td>{{ doctorInfo.city }}</td>
+            <td class="fw-bold">
+              {{ doctorInfo.doctor.createdAt.split("T")[0] }}
+            </td>
+            <td>
+              <!-- Dropdown for changing status -->
+              <select
+                class="form-select"
+                [(ngModel)]="doctorInfo.doctor.isSuspended"
+                (ngModelChange)="openConfirmationModal(doctorInfo.doctor)"
+              >
+                <option [ngValue]="false">Approve</option>
+                <option [ngValue]="true">Suspend</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

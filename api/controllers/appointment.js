@@ -1,13 +1,144 @@
 const Appointment = require("../app/appointment/model");
 const User = require("../app/auth/model");
+const Doctor = require("../app/doctor/model");
+const dailyAppointmentsBooked = async (req, res) => {
+  try {
+    const { date } = req.body;
+    currentDate = new Date(date);
+    const { id } = req.params;
+    if (id === undefined) {
+      res.status(500).json({
+        message: "id doctor undefined",
+      });
+    }
+    const doctor = await User.findById(id);
+    if (!doctor) {
+      return res.status(400).send("Doctor does not exist");
+    }
+    // calculate the appointments number per the selected day
+    const dailyAppointmentsBooked = await Appointment.countDocuments({
+      doctor: id,
+      date: {
+        $gte: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+          0,
+          0,
+          0
+        ),
+        $lt: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+          23,
+          59,
+          59
+        ),
+      },
+    });
+
+    // extract the appointments
+
+    // Extract the appointments for the selected day
+    const appointments = await Appointment.find({
+      doctor: id,
+      date: {
+        $gte: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+          0,
+          0,
+          0
+        ),
+        $lt: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+          23,
+          59,
+          59
+        ),
+      },
+    });
+
+    // Extract the timePicked attribute from appointments
+    const timePickedArray = appointments.map(
+      (appointment) => appointment.timePicked
+    );
+
+    res.json({ dailyAppointmentsBooked, timePickedArray });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting daily appointments booked");
+  }
+};
 
 const bookAppointment = async (req, res) => {
   try {
-    const { patientId, doctorId, date } = req.body;
+    const { patientId, doctorId, date, timePicked, phone, email, city } =
+      req.body;
+    if (!patientId || !doctorId || !date) {
+      return res.status(400).send("Missing required fields");
+    }
+
     const patient = await User.findById(patientId);
     const doctor = await User.findById(doctorId);
     if (!patient || !doctor) {
       return res.status(400).send("Patient or doctor does not exist");
+    }
+    const selectedDay = new Date(date);
+    // check if it is a future date
+    const currentDate = new Date();
+    selectedDay.setHours(0, 0, 0, 0);
+    currentDate.setHours(0, 0, 0, 0);
+    console.log(selectedDay, currentDate);
+    if (selectedDay < currentDate) {
+      return res.json({
+        available: false,
+        message: "Selected date must be in the future",
+      });
+    }
+    // check if doctor is busy
+    const dayOfWeek = selectedDay.getDay();
+
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return res.json({
+        available: false,
+        message: "Doctor does not work on weekends",
+      });
+    }
+
+    // check if  full day is booked
+    const dailyAppointmentsBooked = await Appointment.countDocuments({
+      doctor: doctorId,
+      date: {
+        $gte: new Date(
+          selectedDay.getFullYear(),
+          selectedDay.getMonth(),
+          selectedDay.getDate(),
+          0,
+          0,
+          0
+        ),
+        $lt: new Date(
+          selectedDay.getFullYear(),
+          selectedDay.getMonth(),
+          selectedDay.getDate(),
+          23,
+          59,
+          59
+        ),
+      },
+    });
+
+    console.log("dailyAppointmentsBooked", dailyAppointmentsBooked);
+    if (dailyAppointmentsBooked > 10) {
+      return res.json({
+        available: false,
+        message: "Doctor has reached the daily appointment limit",
+      });
     }
 
     // Create a new appointment
@@ -15,9 +146,15 @@ const bookAppointment = async (req, res) => {
       patient: patientId,
       doctor: doctorId,
       date: new Date(date),
+      phone: phone,
+      city: city,
+      email: email,
+      timePicked: timePicked,
     });
 
-    res.json(newAppointment);
+    res.json(newAppointment, dailyAppointmentsBooked, {
+      message: "Appointment booked successfully",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Error booking appointment");
@@ -61,7 +198,11 @@ const getPatientAppointments = async (req, res) => {
       return res.status(400).send("Patient does not exist");
     }
 
-    const appointments = await Appointment.find({ patient: id });
+    const appointments = await Appointment.find({ patient: id })
+      .populate("doctor")
+      .populate("patient")
+      .exec();
+
     res.json(appointments);
   } catch (err) {
     console.error(err);
@@ -73,12 +214,15 @@ const getDoctorAppointments = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const doctor = await User.findById(id);
+    const doctor = await Doctor.find({ doctor: id }).populate("doctor").exec();
     if (!doctor) {
       return res.status(400).send("Doctor does not exist");
     }
 
-    const appointments = await Appointment.find({ doctor: id });
+    const appointments = await Appointment.find({ doctor: id })
+      .populate("doctor")
+      .populate("patient")
+      .exec();
     res.json(appointments);
   } catch (err) {
     console.error(err);
@@ -118,22 +262,57 @@ const updateAppointment = async (req, res) => {
 };
 
 //patch
-const confirmAppointment = async (req, res) => {
-  const { appointmentId } = req.params.id;
-  const { isConfirmed } = req.body;
+const changeStatusAppointment = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
 
-  const appointment = await Appointment.findById(appointmentId);
-  if (!appointment) {
-    return res.status(400).send("Appointment does not exist");
+  if (!status) {
+    return res.status(400).send("Missing required field status");
   }
-  await Appointment.findByIdAndUpdate(appointmentId, {
-    isConfirmed: isConfirmed,
-  });
+  try {
+    console.log(id);
+    const appointment = await Appointment.findById(id);
+    console.log(appointment);
+    if (!appointment) {
+      return res.status(400).send("Appointment does not exist");
+    }
+    await Appointment.findByIdAndUpdate(id, {
+      status: status,
+    });
+
+    //! Send email to patient
+
+
+    res.json({ message: "Appointment updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error updating appointment");
+  }
 };
 
 const getConfirmedAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find({ isConfirmed: true });
+    const appointments = await Appointment.find({ status: "confirm" });
+    res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting appointments");
+  }
+};
+const getConfirmedAppointmentsDay = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { date } = req.body;
+    const startOfDay = new Date(date).setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999); // Set to the end of the day
+    console.log("wewe",startOfDay, new Date() , endOfDay);
+    const appointments = await Appointment.find({
+      doctor: id,
+      status: "confirm",
+      date: { $gte: startOfDay, $lte: endOfDay },
+    }).populate("patient").exec();
+
     res.json(appointments);
   } catch (err) {
     console.error(err);
@@ -141,9 +320,28 @@ const getConfirmedAppointments = async (req, res) => {
   }
 };
 
+const getNextAppoitments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const startOfDay = new Date().setHours(0, 0, 0, 0);
+    const appointments = await Appointment.find({
+      doctor: id,
+      date: { $gte: startOfDay },
+
+    }).populate("patient").exec();
+
+    res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting appointments");
+  }
+};
+
+
 const getUnconfirmedAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find({ isConfirmed: false });
+    const appointments = await Appointment.find({ status: "decline" });
     res.json(appointments);
   } catch (err) {
     console.error(err);
@@ -162,7 +360,7 @@ const getConfirmedPatientAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       patient: id,
-      isConfirmed: true,
+      status: "confirm",
     });
     res.json(appointments);
   } catch (err) {
@@ -181,7 +379,7 @@ const getUnconfirmedPatientAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       patient: id,
-      isConfirmed: false,
+      status: "pending" || "decline",
     });
     res.json(appointments);
   } catch (err) {
@@ -201,7 +399,7 @@ const getConfirmedDoctorAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       doctor: id,
-      isConfirmed: true,
+      status: "confirm",
     });
     res.json(appointments);
   } catch (err) {
@@ -221,7 +419,7 @@ const getUnconfirmedDoctorAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       doctor: id,
-      isConfirmed: false,
+      status: "pending" || "decline",
     });
     res.json(appointments);
   } catch (err) {
@@ -243,7 +441,7 @@ const getConfirmedDoctorPatientAppointments = async (req, res) => {
     const appointments = await Appointment.find({
       doctor: doctorId,
       patient: patientId,
-      isConfirmed: true,
+      status: "confirm",
     });
     res.json(appointments);
   } catch (err) {
@@ -257,9 +455,11 @@ module.exports = {
   deleteAppointment,
   getAllAppointments,
   getPatientAppointments,
+  dailyAppointmentsBooked,
   getDoctorAppointments,
+  getNextAppoitments,
   updateAppointment,
-  confirmAppointment,
+  changeStatusAppointment,
   getConfirmedAppointments,
   getUnconfirmedAppointments,
   getConfirmedPatientAppointments,
@@ -267,4 +467,5 @@ module.exports = {
   getConfirmedDoctorAppointments,
   getUnconfirmedDoctorAppointments,
   getConfirmedDoctorPatientAppointments,
+  getConfirmedAppointmentsDay,
 };

@@ -1,0 +1,43 @@
+
+<div class="pagetitle">
+    <h1>Appointments</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+        <li class="breadcrumb-item active">Appointments</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+  
+<div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Appointments</h5>
+
+      <!-- Table with hoverable rows -->
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">doctor name</th>
+            <th scope="col">status</th>
+            <th scope="col">date</th>
+            <th scope="col">action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let appointment of appointmentsList">
+            <th scope="row">1</th>
+            <td>{{appointment.doctor.username}}</td>
+            <td>{{appointment.status}}</td>
+            <td>{{appointment.date}}</td>
+            <td>{{appointment.status}}</td>
+          </tr>
+        
+       
+        </tbody>
+      </table>
+      <!-- End Table with hoverable rows -->
+
+    </div>
+  </div>

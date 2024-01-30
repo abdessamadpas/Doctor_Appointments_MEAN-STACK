@@ -5,4 +5,4 @@ const patientSchema = new mongoose.Schema({
     medicalCondition: String,
     appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Appointment" }],
 }, { timestamps: true});
-    
+module.exports = mongoose.model("Patient", patientSchema);

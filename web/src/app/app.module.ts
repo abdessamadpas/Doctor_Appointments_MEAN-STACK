@@ -8,11 +8,23 @@ import { RegisterComponent } from './views/register/register.component';
 import { DefaultLayoutComponent } from './containers/default-layout/default-layout.component';
 import { HeaderComponent } from './containers/default-layout/header/header.component';
 import { SideBarComponent } from './containers/default-layout/side-bar/side-bar.component';
-import { DashboardComponent } from './views/dashboard/dashboard.component';
-import { ApplyDoctorComponent } from './views/apply-doctor/apply-doctor.component';
-import { CardComponent } from './components/card/card.component';
-import { AppointmentsComponent } from './views/appointments/appointments.component';
+import { PatientComponent } from './views/patient/patient.component';
+import { PatientModule } from './views/patient/patient.module';
+import { PatientRoutingModule } from './views/patient/patient-routing.module';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { DoctorComponent } from './views/doctor/doctor.component';
+import { ProfileComponent } from './containers/default-layout/profile/profile.component';
+import { AuthGuard } from './guards/auth.guard';
 
+
+import { FullCalendarModule } from '@fullcalendar/angular';
+import { AdminComponent } from './views/admin/admin.component';
+import { DashboardComponent } from './views/admin/dashboard/dashboard.component';
+import { PatientCtrlComponent } from './views/admin/patient-ctrl/patient-ctrl.component';
+import { DoctorCtrlComponent } from './views/admin/doctor-ctrl/doctor-ctrl.component';
+import { ConfirmationModalComponent } from './components/confirmation-modal/confirmation-modal.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 @NgModule({
   declarations: [
     AppComponent,
@@ -21,16 +33,30 @@ import { AppointmentsComponent } from './views/appointments/appointments.compone
     DefaultLayoutComponent,
     HeaderComponent,
     SideBarComponent,
-    DashboardComponent,
-    ApplyDoctorComponent,
-    CardComponent,
-    AppointmentsComponent
+   
+    PatientComponent,
+        DoctorComponent,
+        ProfileComponent,
+        AdminComponent,
+        DashboardComponent,
+        PatientCtrlComponent,
+        DoctorCtrlComponent,
+        ConfirmationModalComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    FormsModule,
+    PatientModule,
+    PatientRoutingModule,
+    HttpClientModule,
+    FullCalendarModule,
+    NgbModule
   ],
-  providers: [],
+  
+  providers: [
+    AuthGuard
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

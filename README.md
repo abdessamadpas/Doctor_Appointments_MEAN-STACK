@@ -17,7 +17,7 @@ npm start
 
 👤 **Abdessamad AALOUWAN**
 
-* Github: [@javier](https://github.com/abdessamadpas)
+* Github: [@AbdessamadPas](https://github.com/abdessamadpas)
 * LinkedIn: [LinkedIn](https://www.linkedin.com/in/abdessamad-aalouwan/)
 * Portfolio: [Portfolio](https://www.abdessamadpas.tech/)
 ## Show your support

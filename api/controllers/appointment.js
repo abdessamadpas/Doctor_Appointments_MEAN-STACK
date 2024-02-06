@@ -1,6 +1,7 @@
 const Appointment = require("../app/appointment/model");
 const User = require("../app/auth/model");
 const Doctor = require("../app/doctor/model");
+const { sendEmail } = require("../services/nodeMailer");
 const dailyAppointmentsBooked = async (req, res) => {
   try {
     const { date } = req.body;
@@ -151,7 +152,18 @@ const bookAppointment = async (req, res) => {
       email: email,
       timePicked: timePicked,
     });
-
+// send email
+const mailOptions = {
+  from: {
+    name: "Doctor App",
+    address: "boughadoin@gmail.com",
+  }, // sender address
+  to: [email], // list of receivers
+  subject: "email from the doctor app", // Subject line
+  text: "about ur request to book an appointment   ", // plain text body
+  html: `<b>ur request to  book an appointment with doctor  ${doctor.username} ${date}  ${timePicked} in review </b>`, // html body
+};
+sendEmail(mailOptions);
     res.json(newAppointment, dailyAppointmentsBooked, {
       message: "Appointment booked successfully",
     });
@@ -276,12 +288,24 @@ const changeStatusAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(400).send("Appointment does not exist");
     }
-    await Appointment.findByIdAndUpdate(id, {
+   const userUpdated=  await Appointment.findByIdAndUpdate(id, {
       status: status,
     });
 
     //! Send email to patient
-
+    const patientEmail =appointment.email
+// send email
+const mailOptions = {
+  from: {
+    name: "Doctor App",
+    address: "boughadoin@gmail.com",
+  }, // sender address
+  to: [patientEmail], // list of receivers
+  subject: "email from the doctor app", // Subject line
+  text: "about ur appointment  ", // plain text body
+  html: `<b>ur request to get appointment in   ${appointment.date} at ${appointment.timePicked} changed to ${userUpdated.status}  </b>`, // html body
+};
+sendEmail(mailOptions);
 
     res.json({ message: "Appointment updated successfully" });
   } catch (error) {

@@ -12,6 +12,11 @@ const login = async (req, res, next) => {
     });
   }
   const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return res.status(400).json({
+      message: "user not found🐱‍🏍",
+    });
+  }
   if (user.isSuspended) {
     return res.status(400).json({
       message: "Your Account is Suspended",
